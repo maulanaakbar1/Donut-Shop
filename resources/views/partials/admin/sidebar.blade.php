@@ -55,8 +55,8 @@
                 </a>
 
                 <a
-                    href="#"
-                    class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-[#c96f32]"
+                    href="{{ route('admin.donut.index') }}"
+                    class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-orange-50 hover:text-[#c96f32] {{ request()->routeIs('admin.donut.*') ? 'bg-orange-50 text-[#c96f32]' : 'text-slate-600' }}"
                 >
                     <i class="fa-solid fa-cookie-bite w-5 text-center"></i>
                     Donat
