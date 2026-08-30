@@ -71,8 +71,8 @@
                 </a>
 
                 <a
-                    href="#"
-                    class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-[#c96f32]"
+                    href="{{ route('admin.order.index') }}"
+                    class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition hover:bg-orange-50 hover:text-[#c96f32] {{ request()->routeIs('admin.order.*') ? 'bg-orange-50 text-[#c96f32]' : 'text-slate-600' }}"
                 >
                     <span class="flex items-center gap-3">
                         <i class="fa-solid fa-bag-shopping w-5 text-center"></i>
@@ -80,7 +80,7 @@
                     </span>
 
                     <span class="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-[#c96f32]">
-                        0
+                        {{ \App\Models\Order::where('status', 'pending')->count() }}
                     </span>
                 </a>
 

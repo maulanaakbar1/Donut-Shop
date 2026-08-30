@@ -6,10 +6,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DonutController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\HomeController;
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/login', [LoginController::class, 'showLogin'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.process');
@@ -32,4 +33,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/donat', [DonutController::class, 'store'])->name('donut.store');
     Route::put('/donat/{donut}', [DonutController::class, 'update'])->name('donut.update');
     Route::delete('/donat/{donut}', [DonutController::class, 'destroy'])->name('donut.destroy');
+
+    Route::get('/pesanan', [OrderController::class, 'index'])->name('order.index');
+    Route::put('/pesanan/{order}/status', [OrderController::class, 'updateStatus'])->name('order.status');
 });
