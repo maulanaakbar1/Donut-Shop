@@ -201,5 +201,5 @@
 
 <div
     id="adminSidebarOverlay"
-    class="fixed inset-0 z-40 hidden bg-slate-900/40 backdrop-blur-sm lg:hidden"
-></div>
+    class="fixed inset-0 z-40 hidden bg-slate-900/40 backdrop-blur-sm lg:hidden">
+</div>
