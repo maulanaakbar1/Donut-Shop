@@ -231,7 +231,7 @@
                         </div>
 
                         <a
-                            href="#"
+                            href="{{ route('checkout.index') }}"
                             class="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#c96f32] px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-orange-100 transition hover:bg-[#b85f27]"
                         >
                             Lanjut Checkout

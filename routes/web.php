@@ -6,10 +6,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DonutController;
-use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CartController;
-
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\OrderController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -21,15 +22,18 @@ Route::post('/register', [RegisterController::class, 'register'])->name('registe
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-
 Route::middleware('auth')->group(function () {
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
     Route::put('/cart/{cart}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{cart}', [CartController::class, 'destroy'])->name('cart.destroy');
     Route::delete('/cart', [CartController::class, 'clear'])->name('cart.clear');
-});
 
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+
+    Route::get('/pesanan/{order}', [OrderController::class, 'show'])->name('order.show');
+});
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -44,6 +48,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::put('/donat/{donut}', [DonutController::class, 'update'])->name('donut.update');
     Route::delete('/donat/{donut}', [DonutController::class, 'destroy'])->name('donut.destroy');
 
-    Route::get('/pesanan', [OrderController::class, 'index'])->name('order.index');
-    Route::put('/pesanan/{order}/status', [OrderController::class, 'updateStatus'])->name('order.status');
+    Route::get('/pesanan', [AdminOrderController::class, 'index'])->name('order.index');
+    Route::put('/pesanan/{order}/status', [AdminOrderController::class, 'updateStatus'])->name('order.status');
 });
