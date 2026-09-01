@@ -103,11 +103,23 @@
             <div class="flex items-center gap-2 sm:gap-3">
 
                 <a
-                    href="#"
-                    class="flex h-10 w-10 items-center justify-center rounded-xl border border-orange-100 bg-white text-slate-500 transition hover:bg-orange-50 hover:text-[#c96f32]"
+                    href="{{ auth()->check() ? route('cart.index') : route('login') }}"
+                    class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-orange-100 bg-white text-slate-500 transition hover:bg-orange-50 hover:text-[#c96f32]"
                     title="Keranjang"
                 >
                     <i class="fa-solid fa-cart-shopping text-sm"></i>
+
+                    @auth
+                        @php
+                            $cartCount = auth()->user()->carts()->sum('quantity');
+                        @endphp
+
+                        @if($cartCount > 0)
+                            <span class="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#c96f32] px-1 text-[10px] font-bold text-white">
+                                {{ $cartCount > 99 ? '99+' : $cartCount }}
+                            </span>
+                        @endif
+                    @endauth
                 </a>
 
                 @auth
@@ -201,7 +213,7 @@
                     @endguest
 
                     <a
-                        href="#"
+                        href="{{ auth()->check() ? route('cart.index') : route('login') }}"
                         class="mt-2 flex items-center justify-center gap-2 rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-sm font-semibold text-[#c96f32]"
                     >
                         <i class="fa-solid fa-cart-shopping"></i>
@@ -510,13 +522,29 @@
 
                                         </div>
 
-                                        <a
-                                            href="#"
-                                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-[#c96f32] transition hover:bg-[#c96f32] hover:text-white"
-                                            title="Pesan {{ $donut->name }}"
-                                        >
-                                            <i class="fa-solid fa-plus text-sm"></i>
-                                        </a>
+                                        <form action="{{ route('cart.store') }}" method="POST">
+                                            @csrf
+
+                                            <input
+                                                type="hidden"
+                                                name="donut_id"
+                                                value="{{ $donut->id }}"
+                                            >
+
+                                            <input
+                                                type="hidden"
+                                                name="quantity"
+                                                value="1"
+                                            >
+
+                                            <button
+                                                type="submit"
+                                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-[#c96f32] transition hover:bg-[#c96f32] hover:text-white"
+                                                title="Tambah ke keranjang"
+                                            >
+                                                <i class="fa-solid fa-plus text-sm"></i>
+                                            </button>
+                                        </form>
 
                                     </div>
 
