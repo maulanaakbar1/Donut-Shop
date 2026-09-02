@@ -71,6 +71,13 @@ class CartController extends Controller
         ]);
 
         if ($validated['quantity'] > $cart->donut->stock) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Jumlah melebihi stok yang tersedia.',
+                ], 422);
+            }
+
             return back()->with('error', 'Jumlah melebihi stok yang tersedia.');
         }
 
@@ -79,8 +86,22 @@ class CartController extends Controller
             'price' => $cart->donut->price,
         ]);
 
+        $cart->refresh();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Jumlah pesanan berhasil diperbarui.',
+                'quantity' => $cart->quantity,
+                'price' => $cart->price,
+                'subtotal' => $cart->subtotal,
+            ]);
+        }
+
         return back()->with('success', 'Jumlah pesanan berhasil diperbarui.');
+
     }
+
 
     public function destroy(Cart $cart)
     {

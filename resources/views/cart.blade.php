@@ -6,7 +6,6 @@
 
 <div class="min-h-screen bg-[#fffaf5]">
 
-```
 <div class="mx-auto max-w-6xl px-4 py-8 pb-28 sm:px-6 sm:pb-8 lg:px-8">
 
     <div class="mb-8">
@@ -204,7 +203,10 @@
 
                                     </form>
 
-                                    <p class="text-sm font-bold text-[#c96f32] sm:text-base">
+                                    <p
+                                        id="subtotal-{{ $cart->id }}"
+                                        class="text-sm font-bold text-[#c96f32] sm:text-base"
+                                    >
                                         Rp{{ number_format($cart->subtotal, 0, ',', '.') }}
                                     </p>
 
@@ -331,13 +333,11 @@
     @endif
 
 </div>
-```
 
 </div>
 
 @if($carts->count())
 
-```
 <div class="fixed inset-x-0 bottom-0 z-50 border-t border-orange-100 bg-white/95 px-4 pb-4 pt-3 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl lg:hidden">
 
     <div class="mx-auto flex max-w-6xl items-center gap-3">
@@ -399,7 +399,6 @@
     </form>
 
 @endforeach
-```
 
 @endif
 
@@ -578,10 +577,16 @@
     }
 
     document.querySelectorAll('.quantity-btn').forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', async () => {
             const input = document.getElementById(button.dataset.target);
 
             if (!input) {
+                return;
+            }
+
+            const form = input.closest('form');
+
+            if (!form) {
                 return;
             }
 
@@ -589,15 +594,87 @@
             const min = Number(input.min) || 1;
             const max = Number(input.max) || Infinity;
 
+            let newValue = currentValue;
+
             if (button.dataset.action === 'increase') {
-                input.value = Math.min(currentValue + 1, max);
+                newValue = Math.min(currentValue + 1, max);
             }
 
             if (button.dataset.action === 'decrease') {
-                input.value = Math.max(currentValue - 1, min);
+                newValue = Math.max(currentValue - 1, min);
             }
 
-            input.closest('form')?.submit();
+            if (newValue === currentValue) {
+                return;
+            }
+
+            const previousValue = input.value;
+
+            input.value = newValue;
+
+            const buttons = form.querySelectorAll('.quantity-btn');
+
+            buttons.forEach(item => {
+                item.disabled = true;
+            });
+
+            try {
+                const formData = new FormData(form);
+
+                const csrfInput = form.querySelector('input[name="_token"]');
+
+                if (!csrfInput) {
+                throw new Error('CSRF token tidak ditemukan.');
+                }
+
+                const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                'X-CSRF-TOKEN': csrfInput.value,
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+                });
+
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Gagal memperbarui jumlah.');
+                }
+
+                input.value = data.quantity;
+
+                const cartId = input.id.replace('quantity-', '');
+
+                const checkbox = document.querySelector(
+                    `.cart-checkbox[value="${cartId}"]`
+                );
+
+                if (checkbox) {
+                    checkbox.dataset.quantity = data.quantity;
+                    checkbox.dataset.price = data.price;
+                }
+
+                const subtotalElement = document.getElementById(
+                    `subtotal-${cartId}`
+                );
+
+                if (subtotalElement) {
+                    subtotalElement.textContent = formatRupiah(data.subtotal);
+                }
+
+                updateSummary();
+
+            } catch (error) {
+                input.value = previousValue;
+                alert(error.message);
+            } finally {
+                buttons.forEach(item => {
+                    item.disabled = false;
+                });
+            }
         });
     });
 
