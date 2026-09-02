@@ -11,24 +11,80 @@ use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $cartIds = $request->input('cart_ids', []);
+
+        if (!is_array($cartIds) || empty($cartIds)) {
+            return redirect()
+                ->route('cart.index')
+                ->with('error', 'Pilih minimal satu item untuk checkout.');
+        }
+
         $carts = Cart::with('donut.category')
             ->where('user_id', Auth::id())
-            ->latest()
+            ->whereIn('id', $cartIds)
             ->get();
 
         if ($carts->isEmpty()) {
             return redirect()
                 ->route('cart.index')
-                ->with('error', 'Keranjang masih kosong.');
+                ->with('error', 'Item yang dipilih tidak ditemukan.');
+        }
+
+        if ($carts->count() !== count(array_unique($cartIds))) {
+            return redirect()
+                ->route('cart.index')
+                ->with('error', 'Sebagian item yang dipilih tidak valid.');
         }
 
         foreach ($carts as $cart) {
-            if (!$cart->donut->is_active) {
+            if (!$cart->donut || !$cart->donut->is_active) {
                 return redirect()
                     ->route('cart.index')
-                    ->with('error', "Donat {$cart->donut->name} sudah tidak tersedia.");
+                    ->with('error', 'Ada donat yang sudah tidak tersedia.');
+            }
+
+            if ($cart->quantity > $cart->donut->stock) {
+                return redirect()
+                    ->route('cart.index')
+                    ->with('error', 'Jumlah salah satu donat melebihi stok yang tersedia.');
+            }
+        }
+
+        $subtotal = $carts->sum(function ($cart) {
+            return $cart->subtotal;
+        });
+
+        return view('checkout', compact('carts', 'subtotal'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'cart_ids' => ['required', 'array', 'min:1'],
+            'cart_ids.*' => ['required', 'integer', 'exists:carts,id'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $cartIds = array_unique($validated['cart_ids']);
+
+        $carts = Cart::with('donut')
+            ->where('user_id', Auth::id())
+            ->whereIn('id', $cartIds)
+            ->get();
+
+        if ($carts->count() !== count($cartIds)) {
+            return redirect()
+                ->route('cart.index')
+                ->with('error', 'Ada item checkout yang tidak valid.');
+        }
+
+        foreach ($carts as $cart) {
+            if (!$cart->donut || !$cart->donut->is_active) {
+                return redirect()
+                    ->route('cart.index')
+                    ->with('error', 'Ada donat yang sudah tidak tersedia.');
             }
 
             if ($cart->quantity > $cart->donut->stock) {
@@ -38,70 +94,33 @@ class CheckoutController extends Controller
             }
         }
 
-        $subtotal = $carts->sum('subtotal');
+        $totalAmount = $carts->sum(function ($cart) {
+            return $cart->subtotal;
+        });
 
-        return view('checkout', compact('carts', 'subtotal'));
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'notes' => ['nullable', 'string', 'max:1000'],
-        ]);
-
-        $carts = Cart::with('donut')
-            ->where('user_id', Auth::id())
-            ->lockForUpdate()
-            ->get();
-
-        if ($carts->isEmpty()) {
-            return redirect()
-                ->route('cart.index')
-                ->with('error', 'Keranjang masih kosong.');
-        }
-
-        $order = DB::transaction(function () use ($carts, $request) {
-            $total = 0;
-
-            foreach ($carts as $cart) {
-                $donut = $cart->donut;
-
-                if (!$donut->is_active) {
-                    throw new \RuntimeException("Donat {$donut->name} sudah tidak tersedia.");
-                }
-
-                if ($cart->quantity > $donut->stock) {
-                    throw new \RuntimeException("Stok {$donut->name} tidak mencukupi.");
-                }
-
-                $price = $donut->price;
-                $subtotal = $price * $cart->quantity;
-
-                $total += $subtotal;
-            }
+        $order = DB::transaction(function () use ($carts, $totalAmount, $validated) {
 
             $order = Order::create([
                 'user_id' => Auth::id(),
                 'order_code' => 'ND-' . strtoupper(Str::random(10)),
-                'total_amount' => $total,
+                'total_amount' => $totalAmount,
                 'status' => 'pending',
                 'payment_status' => 'pending',
-                'notes' => $request->notes,
+                'notes' => $validated['notes'] ?? null,
             ]);
 
             foreach ($carts as $cart) {
-                $price = $cart->donut->price;
-                $subtotal = $price * $cart->quantity;
-
                 $order->items()->create([
                     'donut_id' => $cart->donut_id,
                     'quantity' => $cart->quantity,
-                    'price' => $price,
-                    'subtotal' => $subtotal,
+                    'price' => $cart->price,
+                    'subtotal' => $cart->subtotal,
                 ]);
-
-                $cart->delete();
             }
+
+            Cart::where('user_id', Auth::id())
+                ->whereIn('id', $carts->pluck('id'))
+                ->delete();
 
             return $order;
         });

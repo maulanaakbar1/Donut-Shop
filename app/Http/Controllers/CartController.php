@@ -97,4 +97,28 @@ class CartController extends Controller
 
         return back()->with('success', 'Keranjang berhasil dikosongkan.');
     }
+
+    public function destroySelected(Request $request)
+    {
+        $validated = $request->validate([
+        'cart_ids' => ['required', 'array', 'min:1'],
+        'cart_ids.*' => ['required', 'integer'],
+        ]);
+
+        $deleted = Cart::where('user_id', Auth::id())
+            ->whereIn('id', $validated['cart_ids'])
+            ->delete();
+
+        if ($deleted === 0) {
+            return redirect()
+                ->route('cart.index')
+                ->with('error', 'Tidak ada item yang berhasil dihapus.');
+        }
+
+        return redirect()
+            ->route('cart.index')
+            ->with('success', "{$deleted} item berhasil dihapus dari keranjang.");
+
+    }
+
 }
