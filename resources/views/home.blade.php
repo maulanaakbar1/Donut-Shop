@@ -508,49 +508,52 @@
                                         {{ $donut->description ?: 'Donat fresh dengan rasa yang lezat dan topping pilihan.' }}
                                     </p>
 
-                                    <div class="mt-4 flex items-end justify-between gap-3">
+                                    <div class="mt-4">
 
-                                        <div class="min-w-0">
+                                        <div class="flex items-end justify-between gap-3">
 
-                                            <p class="truncate text-base font-bold text-[#c96f32] sm:text-lg">
-                                                Rp{{ number_format($donut->price, 0, ',', '.') }}
-                                            </p>
+                                            <div class="min-w-0">
 
-                                            <p class="mt-1 text-[10px] text-slate-400 sm:text-[11px]">
-                                                Stok {{ $donut->stock }}
-                                            </p>
+                                                <p class="truncate text-base font-bold text-[#c96f32] sm:text-lg">
+                                                    Rp{{ number_format($donut->price, 0, ',', '.') }}
+                                                </p>
+
+                                                <p class="mt-1 text-[10px] text-slate-400 sm:text-[11px]">
+                                                    Stok {{ $donut->stock }}
+                                                </p>
+
+                                            </div>
 
                                         </div>
 
-                                        <form action="{{ route('cart.store') }}" method="POST">
-                                            @csrf
-
-                                            <input
-                                                type="hidden"
-                                                name="donut_id"
-                                                value="{{ $donut->id }}"
-                                            >
-
-                                            <input
-                                                type="hidden"
-                                                name="quantity"
-                                                value="1"
-                                            >
+                                        <div class="mt-3 grid grid-cols-2 gap-2">
 
                                             <button
-                                                type="submit"
-                                                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-[#c96f32] transition hover:bg-[#c96f32] hover:text-white"
-                                                title="Tambah ke keranjang"
+                                                type="button"
+                                                onclick="openDonutModal({{ $donut->id }}, '{{ addslashes($donut->name) }}', {{ $donut->price }}, {{ $donut->stock }}, 'cart')"
+                                                class="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-orange-100 bg-orange-50 px-2 text-[11px] font-semibold text-[#c96f32] transition hover:bg-[#c96f32] hover:text-white sm:text-xs"
                                             >
-                                                <i class="fa-solid fa-plus text-sm"></i>
+                                                <i class="fa-solid fa-cart-shopping text-[10px]"></i>
+                                                Keranjang
                                             </button>
-                                        </form>
+
+                                            <button
+                                                type="button"
+                                                onclick="openDonutModal({{ $donut->id }}, '{{ addslashes($donut->name) }}', {{ $donut->price }}, {{ $donut->stock }}, 'order')"
+                                                class="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#c96f32] px-2 text-[11px] font-semibold text-white transition hover:bg-[#b85f27] sm:text-xs"
+                                            >
+                                                <i class="fa-solid fa-bolt text-[10px]"></i>
+                                                Pesan
+                                            </button>
+
+                                        </div>
 
                                     </div>
 
                                 </div>
 
                             </article>
+
 
                         @endforeach
 
@@ -795,6 +798,126 @@
 
         </section>
 
+        <div id="donutModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/40 px-4 backdrop-blur-sm">
+                <div
+                    id="donutModalContent"
+                    class="w-full max-w-sm scale-95 rounded-2xl border border-orange-100 bg-white p-5 opacity-0 shadow-2xl transition duration-200 sm:p-6"
+                >
+
+        
+                <div class="flex items-start justify-between gap-4">
+
+                    <div class="min-w-0">
+
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-[#c96f32]">
+                            Pilih jumlah
+                        </p>
+
+                        <h3
+                            id="modalDonutName"
+                            class="mt-1 truncate text-lg font-bold text-slate-900"
+                        >
+                            Donat
+                        </h3>
+
+                        <p
+                            id="modalDonutPrice"
+                            class="mt-1 text-sm font-semibold text-[#c96f32]"
+                        >
+                            Rp0
+                        </p>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        onclick="closeDonutModal()"
+                        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-orange-50 hover:text-[#c96f32]"
+                    >
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+
+                </div>
+
+                <div class="mt-6 rounded-2xl bg-[#fffaf5] p-4">
+
+                    <div class="flex items-center justify-between gap-4">
+
+                        <div>
+                            <p class="text-sm font-semibold text-slate-700">
+                                Jumlah
+                            </p>
+
+                            <p
+                                id="modalStock"
+                                class="mt-1 text-[11px] text-slate-400"
+                            >
+                                Stok tersedia
+                            </p>
+                        </div>
+
+                        <div class="flex items-center rounded-xl border border-orange-100 bg-white">
+
+                            <button
+                                type="button"
+                                id="modalDecrease"
+                                class="flex h-10 w-10 items-center justify-center text-slate-500 transition hover:bg-orange-50 hover:text-[#c96f32]"
+                            >
+                                <i class="fa-solid fa-minus text-[10px]"></i>
+                            </button>
+
+                            <input
+                                type="number"
+                                id="modalQuantity"
+                                min="1"
+                                value="1"
+                                class="h-10 w-12 border-x border-orange-100 bg-white text-center text-sm font-bold text-slate-700 outline-none"
+                            >
+
+                            <button
+                                type="button"
+                                id="modalIncrease"
+                                class="flex h-10 w-10 items-center justify-center text-slate-500 transition hover:bg-orange-50 hover:text-[#c96f32]"
+                            >
+                                <i class="fa-solid fa-plus text-[10px]"></i>
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="mt-5 flex items-center justify-between gap-4">
+
+                    <div>
+                        <p class="text-[11px] text-slate-400">
+                            Total
+                        </p>
+
+                        <p
+                            id="modalTotal"
+                            class="mt-0.5 text-lg font-bold text-[#c96f32]"
+                        >
+                            Rp0
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        id="modalSubmit"
+                        class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#c96f32] px-5 text-sm font-semibold text-white shadow-lg shadow-orange-100 transition hover:bg-[#b85f27]"
+                    >
+                        <i id="modalSubmitIcon" class="fa-solid fa-cart-plus text-xs"></i>
+                        <span id="modalSubmitText">Tambah ke Keranjang</span>
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </main>
 
     <footer class="border-t border-orange-100 bg-white">
@@ -1026,6 +1149,259 @@
 
             setActiveNav('beranda');
         });
+        
+        let selectedDonut = {
+            id: null,
+            name: '',
+            price: 0,
+            stock: 1,
+            action: 'cart'
+            };
+
+            const donutModal = document.getElementById('donutModal');
+            const donutModalContent = document.getElementById('donutModalContent');
+            const modalDonutName = document.getElementById('modalDonutName');
+            const modalDonutPrice = document.getElementById('modalDonutPrice');
+            const modalStock = document.getElementById('modalStock');
+            const modalQuantity = document.getElementById('modalQuantity');
+            const modalTotal = document.getElementById('modalTotal');
+            const modalDecrease = document.getElementById('modalDecrease');
+            const modalIncrease = document.getElementById('modalIncrease');
+            const modalSubmit = document.getElementById('modalSubmit');
+            const modalSubmitIcon = document.getElementById('modalSubmitIcon');
+            const modalSubmitText = document.getElementById('modalSubmitText');
+
+            function formatDonutRupiah(value) {
+            return 'Rp' + new Intl.NumberFormat('id-ID').format(value);
+            }
+
+            function updateDonutModalTotal() {
+            const quantity = Number(modalQuantity.value) || 1;
+            modalTotal.textContent = formatDonutRupiah(
+            selectedDonut.price * quantity
+            );
+            }
+
+            function openDonutModal(id, name, price, stock, action) {
+            selectedDonut = {
+            id,
+            name,
+            price,
+            stock,
+            action
+            };
+
+            modalDonutName.textContent = name;
+            modalDonutPrice.textContent = formatDonutRupiah(price);
+            modalStock.textContent = `Stok tersedia ${stock} pcs`;
+
+            modalQuantity.value = 1;
+            modalQuantity.max = stock;
+
+            if (action === 'order') {
+                modalSubmitText.textContent = 'Pesan Sekarang';
+                modalSubmitIcon.className = 'fa-solid fa-bolt text-xs';
+            } else {
+                modalSubmitText.textContent = 'Tambah ke Keranjang';
+                modalSubmitIcon.className = 'fa-solid fa-cart-plus text-xs';
+            }
+
+            updateDonutModalTotal();
+
+            donutModal.classList.remove('hidden');
+            donutModal.classList.add('flex');
+
+            requestAnimationFrame(() => {
+                donutModalContent.classList.remove('scale-95', 'opacity-0');
+                donutModalContent.classList.add('scale-100', 'opacity-100');
+            });
+
+            document.body.classList.add('overflow-hidden');
+
+            }
+
+            function closeDonutModal() {
+            donutModalContent.classList.remove('scale-100', 'opacity-100');
+            donutModalContent.classList.add('scale-95', 'opacity-0');
+
+            setTimeout(() => {
+                donutModal.classList.add('hidden');
+                donutModal.classList.remove('flex');
+                document.body.classList.remove('overflow-hidden');
+            }, 200);
+
+            }
+
+            modalDecrease?.addEventListener('click', () => {
+            const current = Number(modalQuantity.value) || 1;
+
+            modalQuantity.value = Math.max(
+                current - 1,
+                1
+            );
+
+            updateDonutModalTotal();
+
+            });
+
+            modalIncrease?.addEventListener('click', () => {
+            const current = Number(modalQuantity.value) || 1;
+
+            modalQuantity.value = Math.min(
+                current + 1,
+                selectedDonut.stock
+            );
+
+            updateDonutModalTotal();
+
+            });
+
+            modalQuantity?.addEventListener('input', () => {
+            let quantity = Number(modalQuantity.value) || 1;
+
+            quantity = Math.max(quantity, 1);
+            quantity = Math.min(quantity, selectedDonut.stock);
+
+            modalQuantity.value = quantity;
+
+            updateDonutModalTotal();
+
+            });
+
+            donutModal?.addEventListener('click', event => {
+            if (event.target === donutModal) {
+            closeDonutModal();
+            }
+            });
+
+            document.addEventListener('keydown', event => {
+            if (
+            event.key === 'Escape' &&
+            donutModal &&
+            !donutModal.classList.contains('hidden')
+            ) {
+            closeDonutModal();
+            }
+            });
+
+            modalSubmit?.addEventListener('click', async () => {
+            const quantity = Number(modalQuantity.value);
+
+            if (
+                !selectedDonut.id ||
+                !quantity ||
+                quantity < 1 ||
+                quantity > selectedDonut.stock
+            ) {
+                return;
+            }
+
+            if (selectedDonut.action === 'order') {
+                const params = new URLSearchParams();
+
+                params.append('donut_id', selectedDonut.id);
+                params.append('quantity', quantity);
+
+                window.location.href = `{{ route('cart.store') }}?${params.toString()}&action=order`;
+                return;
+            }
+
+            const originalText = modalSubmitText.textContent;
+
+            modalSubmit.disabled = true;
+            modalSubmitText.textContent = 'Menambahkan...';
+
+            try {
+                const csrfInput = document.querySelector(
+                    'input[name="_token"]'
+                );
+
+                if (!csrfInput) {
+                    throw new Error('CSRF token tidak ditemukan.');
+                }
+
+                const formData = new FormData();
+
+                formData.append('donut_id', selectedDonut.id);
+                formData.append('quantity', quantity);
+                formData.append('_token', csrfInput.value);
+
+                const response = await fetch(
+                    `{{ route('cart.store') }}`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.message || 'Gagal menambahkan donat ke keranjang.'
+                    );
+                }
+
+                closeDonutModal();
+
+                const cartBadge = document.querySelector(
+                    '[data-cart-count]'
+                );
+
+                if (cartBadge && data.cart_count !== undefined) {
+                    cartBadge.textContent =
+                        data.cart_count > 99
+                            ? '99+'
+                            : data.cart_count;
+                }
+
+                showCartSuccess(
+                    `${selectedDonut.name} berhasil ditambahkan ke keranjang.`
+                );
+
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                modalSubmit.disabled = false;
+                modalSubmitText.textContent = originalText;
+            }
+
+            });
+
+            function showCartSuccess(message) {
+            const existing = document.getElementById('cartToast');
+
+            if (existing) {
+                existing.remove();
+            }
+
+            const toast = document.createElement('div');
+
+            toast.id = 'cartToast';
+            toast.className =
+                'fixed bottom-5 left-1/2 z-[120] flex w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 items-center gap-3 rounded-2xl border border-emerald-200 bg-white px-4 py-3 shadow-2xl';
+
+            toast.innerHTML = `
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                    <i class="fa-solid fa-check text-sm"></i>
+                </div>
+                <p class="min-w-0 flex-1 text-xs font-semibold leading-5 text-slate-700">
+                    ${message}
+                </p>
+            `;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 2500);
+
+        }
+
     </script>
 
     <style>
